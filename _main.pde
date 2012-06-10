@@ -5,16 +5,15 @@
 //0xFF/0xD6/0x05    "Uno" @ 8MHz, ICSP
 
 //LIBRARIES
+#include <Button.h>              //https://github.com/JChristensen/Button
+#include <DS1307RTC.h>           //http://www.arduino.cc/playground/Code/Time (declares the RTC variable)
+#include <Streaming.h>           //http://arduiniana.org/libraries/streaming/
 #include <Time.h>                //http://www.arduino.cc/playground/Code/Time
+#include <Timezone.h>            //https://github.com/JChristensen/Timezone
 #include <Wire.h>                //http://arduino.cc/en/Reference/Libraries
-#include "DS1307RTC.h"           //http://www.arduino.cc/playground/Code/Time (declares the RTC variable)
-#include <EEPROM.h>              //http://arduino.cc/en/Reference/Libraries
-#include <button.h>              //homegrown ;-)
-#include "tz.h"                  //part of this project
 
 //GLOBAL CONSTANTS
 #define TACT_DEBOUNCE 25
-//#define AUTO_TOGGLE 300000      //toggle the LED every 5 minutes
 #define SUNRISE -1                //hour value in schedule that denotes sunrise rather than a fixed time
 #define SUNSET -2                 //hour value in schedule that denotes sunset rather than a fixed time
 
@@ -22,7 +21,6 @@
 #define OFFICIAL_ZENITH 90.83333
 #define LAT 42.93        //latitude
 #define LONG -83.62      //longitude
-#define UTC_OFFSET -5    //US Eastern time
 
 //MCU PIN ASSIGNMENTS
 #define TOGGLE_BTN 2
@@ -30,48 +28,53 @@
 #define LED2 4
 #define LED3 5
 
-//FUNCTION PROTOTYPES
-//void setLEDs(boolean state, boolean slow=true);
-
 //GLOBAL VARIABLES
+int8_t sched[20] = {4,0,0,0, 5,0,1,0, -1,30,0,0, -2,-30,1,0, 23,0,0,0};
 boolean ledState;
-button btnToggle = button(TOGGLE_BTN, true, true, TACT_DEBOUNCE);
+Button btnToggle = Button(TOGGLE_BTN, true, true, TACT_DEBOUNCE);
 time_t utcNow, locNow, utcLast, ntpNextSync, utcStart, uptime;    //RTC is set to UTC
 int8_t utcH, utcM, utcS, locH, locM, locS;                        //utc and local time parts
 uint8_t sunriseH, sunriseM, sunsetH, sunsetM;                     //hour and minute for sunrise and sunset 
 int ord;                                                          //ordinal date (day of year)
 
+//Timezone objects for US Eastern Time
+TimeChangeRule EDT = {"EDT", Second, Sun, Mar, 2, -240};    //Daylight time = UTC - 4 hours
+TimeChangeRule EST = {"EST", First, Sun, Nov, 2, -300};     //Standard time = UTC - 5 hours
+Timezone ET(EDT, EST);
+TimeChangeRule *tcr;
+int utcOffset;
+
 void setup(void)
 {
-    pinMode(A2, OUTPUT);        //power for the RTC
+    pinMode(A2, OUTPUT);               //power for the RTC
     digitalWrite(A2, LOW);
     pinMode(A3, OUTPUT);
     digitalWrite(A3, HIGH);
     
     Serial.begin(9600);
     printVersionInfo();
-    pinMode(LED1, OUTPUT);        //pin configuration
+    pinMode(LED1, OUTPUT);             //pin configuration
     pinMode(LED2, OUTPUT);
     pinMode(LED3, OUTPUT);
     
     setSyncProvider(RTC.get);          //function to get the time from the RTC
     if(timeStatus()!= timeSet) {
-        Serial.println("FAIL: RTC sync");
+        Serial << "FAIL: RTC sync" << endl;
         delay(10000);
     }
     else {
-        Serial.println("RTC sync");
+        Serial << "RTC sync" << endl;
         utcNow = now();
         utcLast = utcNow;
         utcStart = utcNow;
-        calcDstChanges();
-        locNow = utcToLocal(utcNow);          //TZ adjustment
+        locNow = ET.toLocal(utcNow, &tcr);          //TZ adjustment
         ord = ordinalDate(locNow);
-        calcSunset (ord, LAT, LONG, false, UTC_OFFSET, OFFICIAL_ZENITH, sunriseH, sunriseM);
-        calcSunset (ord, LAT, LONG, true, UTC_OFFSET, OFFICIAL_ZENITH, sunsetH, sunsetM);
-        Serial.print("UTC: ");
+        utcOffset = tcr -> offset / 60;
+        calcSunset (ord, LAT, LONG, false, utcOffset, OFFICIAL_ZENITH, sunriseH, sunriseM);
+        calcSunset (ord, LAT, LONG, true, utcOffset, OFFICIAL_ZENITH, sunsetH, sunsetM);
+        Serial << "UTC: ";
         printTime(utcNow);        
-        Serial.print("Local time: ");
+        Serial << "Local time: ";
         printTime(locNow);
         printSunRiseSet();
     }
@@ -86,8 +89,7 @@ void loop(void)
 {
     btnToggle.read();
     if (btnToggle.wasReleased()) {
-        Serial.print("Manual ");
-        Serial.println(!ledState ? "ON" : "OFF");
+        Serial << "Manual " << (!ledState ? "ON" : "OFF") << endl;
         setLEDs(ledState = !ledState, true);
     }
     utcNow = now();
@@ -95,10 +97,9 @@ void loop(void)
         updateTime();
         if (utcS < second(utcLast)) {
             if (utcH == 0 && utcM == 0) {    //recalculate DST change times, sunrise, sunset for the day
-                calcDstChanges();
                 ord = ordinalDate(locNow);
-                calcSunset (ord, LAT, LONG, false, UTC_OFFSET, OFFICIAL_ZENITH, sunriseH, sunriseM);
-                calcSunset (ord, LAT, LONG, true, UTC_OFFSET, OFFICIAL_ZENITH, sunsetH, sunsetM);
+                calcSunset (ord, LAT, LONG, false, utcOffset, OFFICIAL_ZENITH, sunriseH, sunriseM);
+                calcSunset (ord, LAT, LONG, true, utcOffset, OFFICIAL_ZENITH, sunsetH, sunsetM);
             }
             processSchedules();
         }
@@ -111,7 +112,8 @@ void updateTime(void)              //update various time variables
     utcH = hour(utcNow);
     utcM = minute(utcNow);
     utcS = second(utcNow);
-    locNow = utcToLocal(utcNow);   //TZ adjustment
+    locNow = ET.toLocal(utcNow, &tcr);   //TZ adjustment
+    utcOffset = tcr -> offset / 60;
     locH = hour(locNow);
     locM = minute(locNow);
     locS = second(locNow);
@@ -121,26 +123,16 @@ void processSchedules(void)
 {
     int8_t nSched, schedHour, schedMin;
     boolean schedState;
-    uint16_t addr;
     
-    nSched = EEPROM.read(0x100);
-    Serial.println();
-    Serial.print("Local time: ");
+    nSched = sched[0];
+    Serial << endl << "Local time: ";
     printTime(locNow); 
     printSunRiseSet();
-    for (uint8_t i=0; i<nSched; i++) {
-        addr = 0x104 + i * 4;
-        schedHour = EEPROM.read(addr);
-        schedMin = EEPROM.read(addr + 1);
-        schedState = EEPROM.read(addr + 2);
-        Serial.print("Schedule ");
-        Serial.print(i, DEC);
-        Serial.print(": ");
-        Serial.print(schedHour, DEC);
-        Serial.print(' ');
-        Serial.print(schedMin, DEC);
-        Serial.print(' ');
-        Serial.print(schedState, DEC);
+    for (uint8_t i=1; i<=nSched; i++) {
+        schedHour = sched[i * 4];
+        schedMin = sched[i * 4 + 1];
+        schedState = sched[i * 4 + 2];
+        Serial << "Schedule " << _DEC(i) << ": " << _DEC(schedHour) << ' ' << _DEC(schedMin) << ' '  << _DEC(schedState);
         
         if (schedHour == SUNRISE)    //for sunrise schedules, calculate the actual hour and minute
             calcSunOffset(sunriseH, sunriseM, schedHour, schedMin);
@@ -149,10 +141,10 @@ void processSchedules(void)
             calcSunOffset(sunsetH, sunsetM, schedHour, schedMin);
         
         if (schedHour == locH && schedMin == locM) {
-            Serial.print(" -- SETTING...");
+            Serial << " -- SETTING...";
             setLEDs(ledState = schedState, true);
         }
-        Serial.println();
+        Serial << endl;
     }
 }
 
@@ -171,10 +163,7 @@ void calcSunOffset(uint8_t sunH, uint8_t sunM, int8_t &schedHour, int8_t &schedM
     sunTime += schedMin * 60;     //add the offset minutes
     schedHour = hour(sunTime);
     schedMin = minute(sunTime);
-    Serial.print(" = ");
-    Serial.print(schedHour, DEC);
-    Serial.print(' ');
-    Serial.print(schedMin, DEC);
+    Serial << " = " << _DEC(schedHour) << ' ' << _DEC(schedMin);
 }
 
 void setLEDs(boolean state, boolean slow)

@@ -149,3 +149,28 @@ void calcSunset(int n, float lat, float lon, boolean sunset, float GMToffset, fl
     minutes = 60.0 * (ut - hour);                  //rounded above, so letting the float-to-int assignment truncate is OK -- jc
     //was: minutes = round(60*(ut - hour));
 }
+
+//Return ordinal day of year for the given time_t
+int ordinalDate(time_t t)
+{
+    int m = month(t);
+    int d = day(t);
+    
+    if (m == 1)
+        return d;
+    else if (m == 2)
+        return d + 31;
+    else {
+        int n = floor(30.6 * (m + 1)) + d - 122;
+        return n + (isLeap(t) ? 60 : 59);
+    }
+}
+
+//Leap years are those divisible by 4, but not those divisible by 100,
+//except that those divisble by 400 *are* leap years.
+//See Kernighan & Ritchie, 2nd edition, section 2.5.
+boolean isLeap(time_t t)
+{
+    int y = year(t);
+    return (y % 4 == 0 && y % 100 != 0) || y % 400 == 0;
+}
