@@ -36,6 +36,8 @@ time_t utcNow, locNow, utcLast, ntpNextSync, utcStart, uptime;    //RTC is set t
 int8_t utcH, utcM, utcS, locH, locM, locS;                        //utc and local time parts
 uint8_t sunriseH, sunriseM, sunsetH, sunsetM;                     //hour and minute for sunrise and sunset 
 int ord;                                                          //ordinal date (day of year)
+uint8_t currentSched;                                             //the current schedule in effect
+uint8_t overrideSched;                                            //the schedule in effect when the manual off/on button was last pressed
 
 //Timezone objects for US Eastern Time
 TimeChangeRule EDT = {"EDT", Second, Sun, Mar, 2, -240};    //Daylight time = UTC - 4 hours
@@ -86,7 +88,8 @@ void setup(void)
 void loop(void)
 {
     btnToggle.read();
-    if (btnToggle.wasReleased()) {
+    if (btnToggle.wasReleased()) {    //manual override -- only lasts until next schedule time
+        overrideSched = currentSched;
         Serial << "Manual " << (!ledState ? "ON" : "OFF") << endl;
         setLEDs(ledState = !ledState, true);
     }
@@ -99,7 +102,7 @@ void loop(void)
                 calcSunset (ord, LAT, LONG, false, utcOffset, OFFICIAL_ZENITH, sunriseH, sunriseM);
                 calcSunset (ord, LAT, LONG, true, utcOffset, OFFICIAL_ZENITH, sunsetH, sunsetM);
             }
-            processSchedules();
+            currentSched = processSchedules();
         }
         utcLast = utcNow;
     }
@@ -117,12 +120,12 @@ void updateTime(void)              //update various time variables
     locS = second(locNow);
 }
 
-void processSchedules(void)
+uint8_t processSchedules(void)
 {
-    int8_t nSched, schedHour, schedMin, schedNbr;
+    int8_t nSched, schedHour, schedMin;
     boolean schedState, setState;
     int schedTime, localTime;
-    uint8_t i;
+    uint8_t i, schedNbr;
 
     nSched = sched[0];
     localTime = 100 * hour(locNow) + minute(locNow);    //local time as a single integer for comparison
@@ -149,11 +152,13 @@ void processSchedules(void)
         }
     }
     Serial << "Active=" << _DEC(schedNbr);
-    if (ledState != setState) {
+    if (ledState != setState && overrideSched != schedNbr) {    //don't set LEDs if override in effect
+        overrideSched = 0;                                      //cancel any manual override in effect
         Serial << ", set LEDs";
         setLEDs(ledState = setState, true);
     }
     Serial << endl;
+    return schedNbr;    //return the active schedule number
 }
 
 void calcSunOffset(uint8_t sunH, uint8_t sunM, int8_t &schedHour, int8_t &schedMin)
