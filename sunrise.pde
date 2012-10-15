@@ -77,9 +77,9 @@ float rad2deg (float radians)
 }
 
 void calcSunset(int n, float lat, float lon, boolean sunset, float GMToffset, float zenith,
-                byte &hour, byte &minutes)
+byte &hour, byte &minutes)
 {
-  hour = minutes = 0;
+    hour = minutes = 0;
 
     //Convert the longitude to hour value and calculate an approximate time.
     float lonhour = (lon/15);
@@ -126,7 +126,7 @@ void calcSunset(int n, float lat, float lon, boolean sunset, float GMToffset, fl
     else if (cosh < -1)
         return;
 
-  float h;
+    float h;
 
     //finish calculating H and convert into hours
     if(sunset)
@@ -138,13 +138,13 @@ void calcSunset(int n, float lat, float lon, boolean sunset, float GMToffset, fl
 
     //Calculate local mean time of rising/setting
     t = h + ra - (0.06571 * t) - 6.622;
-    
+
     //Adjust back to UTC
     float ut = AdjustTo24 (t - lonhour);
     //Adjust for current time zone
     ut= AdjustTo24 (ut+GMToffset) + 0.00833333;    //round up to the next minute by adding 30 seconds (0.00833333 hour) -- jc
     //was: ut= AdjustTo24 (ut+GMToffset);
-    
+
     hour = floor(ut);
     minutes = 60.0 * (ut - hour);                  //rounded above, so letting the float-to-int assignment truncate is OK -- jc
     //was: minutes = round(60*(ut - hour));
@@ -155,7 +155,7 @@ int ordinalDate(time_t t)
 {
     int m = month(t);
     int d = day(t);
-    
+
     if (m == 1)
         return d;
     else if (m == 2)
@@ -174,3 +174,4 @@ boolean isLeap(time_t t)
     int y = year(t);
     return (y % 4 == 0 && y % 100 != 0) || y % 400 == 0;
 }
+

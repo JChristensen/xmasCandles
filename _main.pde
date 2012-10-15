@@ -29,7 +29,7 @@
 #define LED3 5
 
 //GLOBAL VARIABLES
-int8_t sched[20] = {4,0,0,0, 5,0,1,0, -1,30,0,0, -2,-30,1,0, 23,0,0,0};
+int8_t sched[20] = {4,0,0,0, 0,0,0,0, 5,0,1,0, -1,30,0,0, -2,-30,1,0};
 boolean ledState;
 Button btnToggle = Button(TOGGLE_BTN, true, true, TACT_DEBOUNCE);
 time_t utcNow, locNow, utcLast, ntpNextSync, utcStart, uptime;    //RTC is set to UTC
@@ -50,13 +50,13 @@ void setup(void)
     digitalWrite(A2, LOW);
     pinMode(A3, OUTPUT);
     digitalWrite(A3, HIGH);
-    
+
     Serial.begin(9600);
     printVersionInfo();
     pinMode(LED1, OUTPUT);             //pin configuration
     pinMode(LED2, OUTPUT);
     pinMode(LED3, OUTPUT);
-    
+
     setSyncProvider(RTC.get);          //function to get the time from the RTC
     if(timeStatus()!= timeSet) {
         Serial << "FAIL: RTC sync" << endl;
@@ -67,9 +67,8 @@ void setup(void)
         utcNow = now();
         utcLast = utcNow;
         utcStart = utcNow;
-        locNow = ET.toLocal(utcNow, &tcr);          //TZ adjustment
+        updateTime();
         ord = ordinalDate(locNow);
-        utcOffset = tcr -> offset / 60;
         calcSunset (ord, LAT, LONG, false, utcOffset, OFFICIAL_ZENITH, sunriseH, sunriseM);
         calcSunset (ord, LAT, LONG, true, utcOffset, OFFICIAL_ZENITH, sunsetH, sunsetM);
         Serial << "UTC: ";
@@ -80,9 +79,8 @@ void setup(void)
     }
     setLEDs(true, true);        //lamp test
     setLEDs(false, true);
-    setLEDs(true, false);
     delay(500);
-    setLEDs(false, false);
+    processSchedules();
 }
 
 void loop(void)
@@ -121,31 +119,41 @@ void updateTime(void)              //update various time variables
 
 void processSchedules(void)
 {
-    int8_t nSched, schedHour, schedMin;
-    boolean schedState;
-    
+    int8_t nSched, schedHour, schedMin, schedNbr;
+    boolean schedState, setState;
+    int schedTime, localTime;
+    uint8_t i;
+
     nSched = sched[0];
-    Serial << endl << "Local time: ";
+    localTime = 100 * hour(locNow) + minute(locNow);    //local time as a single integer for comparison
+    Serial << endl << "Local time: " << _DEC(localTime) << ' ';
     printTime(locNow); 
     printSunRiseSet();
-    for (uint8_t i=1; i<=nSched; i++) {
+
+    for (i=1; i<=nSched; i++) {
         schedHour = sched[i * 4];
         schedMin = sched[i * 4 + 1];
         schedState = sched[i * 4 + 2];
         Serial << "Schedule " << _DEC(i) << ": " << _DEC(schedHour) << ' ' << _DEC(schedMin) << ' '  << _DEC(schedState);
-        
-        if (schedHour == SUNRISE)    //for sunrise schedules, calculate the actual hour and minute
+
+        if (schedHour == SUNRISE)         //for sunrise schedules, calculate the actual hour and minute
             calcSunOffset(sunriseH, sunriseM, schedHour, schedMin);
-        
-        if (schedHour == SUNSET)     //for sunset schedules, calculate the actual hour and minute 
+        else if (schedHour == SUNSET)     //for sunset schedules, calculate the actual hour and minute 
             calcSunOffset(sunsetH, sunsetM, schedHour, schedMin);
-        
-        if (schedHour == locH && schedMin == locM) {
-            Serial << " -- SETTING...";
-            setLEDs(ledState = schedState, true);
-        }
         Serial << endl;
+
+        schedTime = 100 * schedHour + schedMin;         //schedule time as a single integer for comparison
+        if (localTime >= schedTime) {
+            schedNbr = i;
+            setState = schedState;
+        }
     }
+    Serial << "Active=" << _DEC(schedNbr);
+    if (ledState != setState) {
+        Serial << ", set LEDs";
+        setLEDs(ledState = setState, true);
+    }
+    Serial << endl;
 }
 
 void calcSunOffset(uint8_t sunH, uint8_t sunM, int8_t &schedHour, int8_t &schedMin)
@@ -154,7 +162,7 @@ void calcSunOffset(uint8_t sunH, uint8_t sunM, int8_t &schedHour, int8_t &schedM
     //calculates the actual hour and minute.
     tmElements_t tm;
     time_t sunTime;
-    
+
     breakTime(locNow, tm);        //get the parts of the current time
     tm.Hour = sunH;               //substitute in the sunrise or sunset time
     tm.Minute = sunM;
@@ -169,7 +177,7 @@ void calcSunOffset(uint8_t sunH, uint8_t sunM, int8_t &schedHour, int8_t &schedM
 void setLEDs(boolean state, boolean slow)
 {
     int pause = slow ? 500 : 0;
-    
+
     if (state) {
         digitalWrite(LED1, HIGH);
         delay(pause);
@@ -187,3 +195,4 @@ void setLEDs(boolean state, boolean slow)
         delay(pause);
     }
 }
+
