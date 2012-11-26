@@ -82,7 +82,7 @@ void setup(void)
     setLEDs(true, true);        //lamp test
     setLEDs(false, true);
     delay(500);
-    processSchedules();
+    currentSched = processSchedules();
 }
 
 void loop(void)
@@ -90,7 +90,7 @@ void loop(void)
     btnToggle.read();
     if (btnToggle.wasReleased()) {    //manual override -- only lasts until next schedule time
         overrideSched = currentSched;
-        Serial << "Manual " << (!ledState ? "ON" : "OFF") << endl;
+        Serial << "Manual " << (ledState ? "OFF" : "ON") << endl;
         setLEDs(ledState = !ledState, true);
     }
     utcNow = now();
