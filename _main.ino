@@ -6,7 +6,8 @@
 
 //LIBRARIES
 #include <Button.h>              //https://github.com/JChristensen/Button
-#include <DS1307RTC.h>           //http://www.arduino.cc/playground/Code/Time (declares the RTC variable)
+//#include <DS1307RTC.h>           //http://www.arduino.cc/playground/Code/Time (declares the RTC variable)
+#include <MCP79412RTC.h>
 #include <Streaming.h>           //http://arduiniana.org/libraries/streaming/
 #include <Time.h>                //http://www.arduino.cc/playground/Code/Time
 #include <Timezone.h>            //https://github.com/JChristensen/Timezone
@@ -97,7 +98,7 @@ void loop(void)
     if (utcNow != utcLast) {
         updateTime();
         if (utcS < second(utcLast)) {
-            if (utcH == 0 && utcM == 0) {    //recalculate DST change times, sunrise, sunset for the day
+            if (utcH != hour(utcLast)) {    //recalculate DST change times, sunrise, sunset for the day
                 ord = ordinalDate(locNow);
                 calcSunset (ord, LAT, LONG, false, utcOffset, OFFICIAL_ZENITH, sunriseH, sunriseM);
                 calcSunset (ord, LAT, LONG, true, utcOffset, OFFICIAL_ZENITH, sunsetH, sunsetM);
