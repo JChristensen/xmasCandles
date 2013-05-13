@@ -10,12 +10,12 @@ void sPrintI00(int val)
 void sPrintDigits(int digits)
 {
     // utility function for digital clock display: prints preceding colon and leading 0
-    Serial << ":";
+    Serial << ':';
     if(digits < 10) Serial << '0';
     Serial << _DEC(digits);
 }
 
-void printTime(time_t t)		//print time to serial monitor
+void printTime(time_t t)        //print time to serial monitor
 {
     sPrintI00(hour(t));
     sPrintDigits(minute(t));
@@ -25,27 +25,22 @@ void printTime(time_t t)		//print time to serial monitor
     Serial << ' ' << monthShortStr(month(t)) << ' ' << _DEC(year(t)) << endl;
 }
 
-void printVersionInfo()
-{
-    Serial << __FILE__ << endl << __DATE__ << ' ' << __TIME__ << endl;
-}
-
 void printSunRiseSet(void)
 {
-    Serial << "Ordinal Date: " << _DEC(ord) << endl;
+    Serial << F("Ordinal Date: ") << _DEC(ord) << endl;
 
-    Serial << "Sunrise: ";
+    Serial << F("Sunrise: ");
     if (sunriseH < 10) Serial << '0';
-    Serial << _DEC(sunriseH) << ":";
+    Serial << _DEC(sunriseH) << ':';
     if (sunriseM < 10)
         Serial << '0';
     else
         Serial << _DEC(sunriseM / 10);
     Serial << _DEC(sunriseM % 10) << endl;
 
-    Serial << "Sunset: ";
+    Serial << F("Sunset: ");
     if (sunsetH < 10) Serial << '0';
-    Serial << _DEC(sunsetH) << ":";
+    Serial << _DEC(sunsetH) << ':';
     if (sunsetM < 10)
         Serial << '0';
     else
@@ -53,3 +48,7 @@ void printSunRiseSet(void)
     Serial << _DEC(sunsetM % 10) << endl;
 }
 
+void printVersionInfo(void)
+{
+    Serial << SKETCH_NAME << ' ' << SKETCH_VER << F(" compiled ") << __DATE__ << ' ' << __TIME__ << endl;
+}

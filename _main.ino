@@ -30,7 +30,7 @@
 #define LED3 5
 
 //GLOBAL VARIABLES
-int8_t sched[20] = {4,0,0,0, 0,0,0,0, 5,0,1,0, -1,30,0,0, -2,-30,1,0};
+int8_t sched[] = { 4,0,0,0,  0,0,0,0,  5,0,1,0,  -1,30,0,0,  -2,-30,1,0 };
 boolean ledState;
 Button btnToggle = Button(TOGGLE_BTN, true, true, TACT_DEBOUNCE);
 time_t utcNow, locNow, utcLast, utcStart;                   //RTC is set to UTC
@@ -62,11 +62,11 @@ void setup(void)
 
     setSyncProvider(RTC.get);          //function to get the time from the RTC
     if(timeStatus() != timeSet) {
-        Serial << "FAIL: RTC sync" << endl;
+        Serial << F("FAIL: RTC sync") << endl;
         delay(10000);
     }
     else {
-        Serial << "RTC sync" << endl;
+        Serial << F("RTC sync") << endl;
         utcNow = now();
         utcLast = utcNow;
         utcStart = utcNow;
@@ -74,9 +74,9 @@ void setup(void)
         ord = ordinalDate(locNow);
         calcSunset (ord, LAT, LONG, false, utcOffset, OFFICIAL_ZENITH, sunriseH, sunriseM);
         calcSunset (ord, LAT, LONG, true, utcOffset, OFFICIAL_ZENITH, sunsetH, sunsetM);
-        Serial << "UTC: ";
+        Serial << F("UTC: ");
         printTime(utcNow);        
-        Serial << "Local time: ";
+        Serial << F("Local time: ");
         printTime(locNow);
         printSunRiseSet();
     }
@@ -91,7 +91,7 @@ void loop(void)
     btnToggle.read();
     if (btnToggle.wasReleased()) {    //manual override -- only lasts until next schedule time
         overrideSched = currentSched;
-        Serial << "Manual " << (ledState ? "OFF" : "ON") << endl;
+        Serial << F("Manual ") << (ledState ? "OFF" : "ON") << endl;
         setLEDs(ledState = !ledState, true);
     }
     utcNow = now();
@@ -129,8 +129,9 @@ uint8_t processSchedules(void)
     uint8_t i, schedNbr;
 
     nSched = sched[0];
+    schedNbr = 0;
     localTime = 100 * hour(locNow) + minute(locNow);    //local time as a single integer for comparison
-    Serial << endl << "Local time: " << _DEC(localTime) << ' ';
+    Serial << endl << F("Local time: ") << _DEC(localTime) << ' ';
     printTime(locNow); 
     printSunRiseSet();
 
@@ -138,7 +139,7 @@ uint8_t processSchedules(void)
         schedHour = sched[i * 4];
         schedMin = sched[i * 4 + 1];
         schedState = sched[i * 4 + 2];
-        Serial << "Schedule " << _DEC(i) << ": " << _DEC(schedHour) << ' ' << _DEC(schedMin) << ' '  << _DEC(schedState);
+        Serial << F("Schedule ") << _DEC(i) << F(": ") << _DEC(schedHour) << ' ' << _DEC(schedMin) << ' '  << _DEC(schedState);
 
         if (schedHour == SUNRISE)         //for sunrise schedules, calculate the actual hour and minute
             calcSunOffset(sunriseH, sunriseM, schedHour, schedMin);
@@ -152,10 +153,16 @@ uint8_t processSchedules(void)
             setState = schedState;
         }
     }
-    Serial << "Active=" << _DEC(schedNbr);
+    //if local time < first schedule time, then the last schedule is in effect
+    if (schedNbr == 0) {
+        schedNbr = nSched;
+        setState = schedState;
+    }
+    
+    Serial << F("Active=") << _DEC(schedNbr);
     if (ledState != setState && overrideSched != schedNbr) {    //don't set LEDs if override in effect
         overrideSched = 0;                                      //cancel any manual override in effect
-        Serial << ", set LEDs";
+        Serial << F(", set LEDs");
         setLEDs(ledState = setState, true);
     }
     Serial << endl;
@@ -177,7 +184,7 @@ void calcSunOffset(uint8_t sunH, uint8_t sunM, int8_t &schedHour, int8_t &schedM
     sunTime += schedMin * 60;     //add the offset minutes
     schedHour = hour(sunTime);
     schedMin = minute(sunTime);
-    Serial << " = " << _DEC(schedHour) << ' ' << _DEC(schedMin);
+    Serial << F(" = ") << _DEC(schedHour) << ' ' << _DEC(schedMin);
 }
 
 void setLEDs(boolean state, boolean slow)
