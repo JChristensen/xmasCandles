@@ -5,12 +5,12 @@
 //0xFF/0xD6/0x05    "Uno" @ 8MHz, ICSP
 
 //LIBRARIES
-#include <Button.h>              //https://github.com/JChristensen/Button
-//#include <DS1307RTC.h>           //http://www.arduino.cc/playground/Code/Time (declares the RTC variable)
-#include <MCP79412RTC.h>
+#include <Button.h>              //http://github.com/JChristensen/Button
+#include <DS1307RTC.h>           //http://www.arduino.cc/playground/Code/Time (declares the RTC variable)
+//#include <MCP79412RTC.h>         //http://github.com/JChristensen/MCP79412RTC
 #include <Streaming.h>           //http://arduiniana.org/libraries/streaming/
 #include <Time.h>                //http://www.arduino.cc/playground/Code/Time
-#include <Timezone.h>            //https://github.com/JChristensen/Timezone
+#include <Timezone.h>            //http://github.com/JChristensen/Timezone
 #include <Wire.h>                //http://arduino.cc/en/Reference/Libraries
 
 //GLOBAL CONSTANTS
@@ -24,7 +24,7 @@
 #define LONG -83.62      //longitude
 
 //MCU PIN ASSIGNMENTS
-#define TOGGLE_BTN 2
+#define TOGGLE_BTN 2     //manual on/off button
 #define LED1 3
 #define LED2 4
 #define LED3 5
@@ -33,12 +33,12 @@
 int8_t sched[20] = {4,0,0,0, 0,0,0,0, 5,0,1,0, -1,30,0,0, -2,-30,1,0};
 boolean ledState;
 Button btnToggle = Button(TOGGLE_BTN, true, true, TACT_DEBOUNCE);
-time_t utcNow, locNow, utcLast, ntpNextSync, utcStart, uptime;    //RTC is set to UTC
-int8_t utcH, utcM, utcS, locH, locM, locS;                        //utc and local time parts
-uint8_t sunriseH, sunriseM, sunsetH, sunsetM;                     //hour and minute for sunrise and sunset 
-int ord;                                                          //ordinal date (day of year)
-uint8_t currentSched;                                             //the current schedule in effect
-uint8_t overrideSched;                                            //the schedule in effect when the manual off/on button was last pressed
+time_t utcNow, locNow, utcLast, utcStart;                   //RTC is set to UTC
+int8_t utcH, utcM, utcS, locH, locM, locS;                  //utc and local time parts
+uint8_t sunriseH, sunriseM, sunsetH, sunsetM;               //hour and minute for sunrise and sunset 
+int ord;                                                    //ordinal date (day of year)
+uint8_t currentSched;                                       //the current schedule in effect
+uint8_t overrideSched;                                      //the schedule in effect when the manual off/on button was last pressed
 
 //Timezone objects for US Eastern Time
 TimeChangeRule EDT = {"EDT", Second, Sun, Mar, 2, -240};    //Daylight time = UTC - 4 hours
@@ -61,7 +61,7 @@ void setup(void)
     pinMode(LED3, OUTPUT);
 
     setSyncProvider(RTC.get);          //function to get the time from the RTC
-    if(timeStatus()!= timeSet) {
+    if(timeStatus() != timeSet) {
         Serial << "FAIL: RTC sync" << endl;
         delay(10000);
     }

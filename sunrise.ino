@@ -13,7 +13,7 @@
  *                                                                      *
  *    These changes resulted in better agreement with the US Naval      *
  *    Observatory calculations,                                         *
- *    http://aa.usno.navy.mil/data/docs/RS_OneYear.php.                 *
+ *    http://aa.usno.navy.mil/data/docs/RS_OneYear.php                  *
  *                                                                      *
  *    For 2011, for my locale, W083°37', N42°56', all sunrise and       *
  *    sunset times agreed within one minute. 12 sunrise times were one  *
