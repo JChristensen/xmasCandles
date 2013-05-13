@@ -1,3 +1,11 @@
+#include <Button.h>              //http://github.com/JChristensen/Button
+#include <DS1307RTC.h>           //http://www.arduino.cc/playground/Code/Time (declares the RTC variable)
+//#include <MCP79412RTC.h>         //http://github.com/JChristensen/MCP79412RTC
+#include <Streaming.h>           //http://arduiniana.org/libraries/streaming/
+#include <Time.h>                //http://www.arduino.cc/playground/Code/Time
+#include <Timezone.h>            //http://github.com/JChristensen/Timezone
+#include <Wire.h>                //http://arduino.cc/en/Reference/Libraries
+
 /*----------------------------------------------------------------------*
  * Christmas Candle Timer                                               *
  * Jack Christensen                                                     *
@@ -6,6 +14,9 @@
  *      for a schedule to turn the lamps on or off at sunrise or        *
  *      sunset, plus or minus an offset.                                *
  * v1.3 09Jun2012 Use Timezone library, remove schedules from EEPROM.   *
+ * v1.4 11May2013 Bugfix: Make last schedule active when local time is  *
+ *      earlier than the first schedule. Thanks to Andy Olson for       *
+ *      finding this bug.                                               *
  *                                                                      *
  * This work is licensed under the Creative Commons Attribution-        *
  * ShareAlike 3.0 Unported License. To view a copy of this license,     *
@@ -38,3 +49,11 @@
  * of minutes offset from Sunrise (-128 to 127)                         *
  *----------------------------------------------------------------------*/
 
+//FUSE SETTINGS (L/H/E)
+//0xE2/0xD6/0x05    Internal RC osc @ 8MHz, preserve EEPROM
+//0xFF/0xDE/0x05    Uno
+//0x62/0xD9/0xFF    Factory
+//0xFF/0xD6/0x05    "Uno" @ 8MHz, ICSP
+
+char* PROGMEM SKETCH_NAME = __FILE__;
+char* PROGMEM SKETCH_VER = "v1.4";

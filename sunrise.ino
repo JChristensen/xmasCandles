@@ -29,19 +29,19 @@
 /*----------------------------------------------------------------------*
  * Function name:calcSunset
  * Params: $date(The day to calculate sunset or sunrise for)
- *	$lat(The latitude for the location to calculate sunrise or sunset for)
- *	$lon(The longitude for the location to calculate sunrise or sunset for west is negative)
- *	$sunset(if set to 1 calculates sunset if set to 0 sunrise)
- *	$GMToffset(difference in hours from GMT)
+ *  $lat(The latitude for the location to calculate sunrise or sunset for)
+ *  $lon(The longitude for the location to calculate sunrise or sunset for west is negative)
+ *  $sunset(if set to 1 calculates sunset if set to 0 sunrise)
+ *  $GMToffset(difference in hours from GMT)
  *
- * 	$zenith: Sun's zenith for sunrise/sunset
- * 	  offical      = 90 degrees 50'  (90.8333)
- * 	  civil        = 96 degrees
- * 	  nautical     = 102 degrees
- * 	  astronomical = 108 degrees
+ *  $zenith: Sun's zenith for sunrise/sunset
+ *    offical      = 90 degrees 50'  (90.8333)
+ *    civil        = 96 degrees
+ *    nautical     = 102 degrees
+ *    astronomical = 108 degrees
  *
- * 	NOTE: longitude is positive for East and negative for West
- * 	      latitude is positive for North and negative for south
+ *  NOTE: longitude is positive for East and negative for West
+ *        latitude is positive for North and negative for south
  *
  *----------------------------------------------------------------------*/
 
