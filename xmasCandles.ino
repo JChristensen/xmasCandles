@@ -1,5 +1,6 @@
 #include <Button.h>              //http://github.com/JChristensen/Button
-#include <DS1307RTC.h>           //http://www.arduino.cc/playground/Code/Time (declares the RTC variable)
+//#include <DS1307RTC.h>           //http://www.arduino.cc/playground/Code/Time
+#include <DS3232RTC.h>           //http://github.com/JChristensen/DS3232RTC
 //#include <MCP79412RTC.h>         //http://github.com/JChristensen/MCP79412RTC
 #include <Streaming.h>           //http://arduiniana.org/libraries/streaming/
 #include <Time.h>                //http://www.arduino.cc/playground/Code/Time
@@ -57,3 +58,5 @@
 
 char* PROGMEM SKETCH_NAME = __FILE__;
 char* PROGMEM SKETCH_VER = "v1.4";
+char* PROGMEM COMPILE_DATE = __DATE__;
+char* PROGMEM COMPILE_TIME = __TIME__;

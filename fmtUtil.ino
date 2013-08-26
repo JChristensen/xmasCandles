@@ -50,5 +50,5 @@ void printSunRiseSet(void)
 
 void printVersionInfo(void)
 {
-    Serial << SKETCH_NAME << ' ' << SKETCH_VER << F(" compiled ") << __DATE__ << ' ' << __TIME__ << endl;
+    Serial << SKETCH_NAME << ' ' << SKETCH_VER << F(" compiled ") << COMPILE_DATE << ' ' << COMPILE_TIME << endl;
 }

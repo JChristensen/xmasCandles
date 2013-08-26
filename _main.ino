@@ -1,18 +1,3 @@
-//FUSE SETTINGS (L/H/E)
-//0xE2/0xD6/0x05    Internal RC osc @ 8MHz, preserve EEPROM
-//0xFF/0xDE/0x05    Uno
-//0x62/0xD9/0xFF    Factory
-//0xFF/0xD6/0x05    "Uno" @ 8MHz, ICSP
-
-//LIBRARIES
-#include <Button.h>              //http://github.com/JChristensen/Button
-#include <DS1307RTC.h>           //http://www.arduino.cc/playground/Code/Time (declares the RTC variable)
-//#include <MCP79412RTC.h>         //http://github.com/JChristensen/MCP79412RTC
-#include <Streaming.h>           //http://arduiniana.org/libraries/streaming/
-#include <Time.h>                //http://www.arduino.cc/playground/Code/Time
-#include <Timezone.h>            //http://github.com/JChristensen/Timezone
-#include <Wire.h>                //http://arduino.cc/en/Reference/Libraries
-
 //GLOBAL CONSTANTS
 #define TACT_DEBOUNCE 25
 #define SUNRISE -1                //hour value in schedule that denotes sunrise rather than a fixed time
@@ -20,8 +5,8 @@
 
 //CONSTANTS FOR SUNRISE AND SUNSET CALCULATIONS
 #define OFFICIAL_ZENITH 90.83333
-#define LAT 42.93        //latitude
-#define LONG -83.62      //longitude
+#define LAT 42.9275      //latitude
+#define LONG -83.6301    //longitude
 
 //MCU PIN ASSIGNMENTS
 #define TOGGLE_BTN 2     //manual on/off button
@@ -49,11 +34,6 @@ int utcOffset;
 
 void setup(void)
 {
-    pinMode(A2, OUTPUT);               //power for the RTC
-    digitalWrite(A2, LOW);
-    pinMode(A3, OUTPUT);
-    digitalWrite(A3, HIGH);
-
     Serial.begin(9600);
     printVersionInfo();
     pinMode(LED1, OUTPUT);             //pin configuration
